@@ -1,0 +1,162 @@
+Transform: AWS::Serverless-2016-10-31
+Resources:
+  LexGenAIBotLambda:
+    Type: AWS::Serverless::Function
+    Properties:
+      Description: !Sub
+        - Stack ${AWS::StackName} Function ${ResourceName}
+        - ResourceName: LexGenAIBotLambda
+      CodeUri: src/LexGenAIBotLambda
+      Handler: TextGeneration.lambda_handler
+      Runtime: python3.11
+      MemorySize: 3008
+      Timeout: 30
+      Tracing: Active
+      Layers:
+        - !Ref Boto3Layer
+  LexGenAIBotLambdaLogGroup:
+    Type: AWS::Logs::LogGroup
+    DeletionPolicy: Retain
+    Properties:
+      LogGroupName: !Sub /aws/lambda/${LexGenAIBotLambda}
+  Boto3Layer:
+    Type: AWS::Serverless::LayerVersion
+    Properties:
+      Description: !Sub
+        - Stack ${AWS::StackName} Layer ${ResourceName}
+        - ResourceName: Boto3Layer
+      ContentUri: src/Boto3Layer
+      RetentionPolicy: Retain
+    Metadata:
+      BuildMethod: python3.11
+  Permission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref LexGenAIBotLambda
+      Action: lambda:InvokeFunction
+      Principal: lexv2.amazonaws.com
+  LexGenAIBotLambdaServiceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - !Join
+          - ''
+          - - 'arn:'
+            - !Ref AWS::Partition
+            - ':iam::aws:policy/service-role/AWSLambdaBasicExecutionRole'
+  LexGenAIBotLambdaServiceRoleDefaultPolicy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: LexGenAIBotLambdaServiceRoleDefaultPolicy
+      PolicyDocument:
+        Statement:
+          - Action:
+              - lex:*
+              - logs:*
+              - s3:DeleteObject
+              - s3:GetObject
+              - s3:ListBucket
+              - s3:PutObject
+            Effect: Allow
+            Resource: '*'
+          - Action: bedrock:InvokeModel
+            Effect: Allow
+            Resource: !Join
+              - ''
+              - - 'arn:aws:bedrock:'
+                - !Ref AWS::Region
+                - '::foundation-model/anthropic.claude-v2'
+        Version: '2012-10-17'
+      Roles:
+        - !Ref LexGenAIBotLambdaServiceRole
+  CfnLexGenAIDemoRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lexv2.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - !Join
+          - ''
+          - - 'arn:'
+            - !Ref AWS::Partition
+            - ':iam::aws:policy/AWSLambdaExecute'
+  LexGenAIBot:
+    Type: AWS::Lex::Bot
+    Properties:
+      IdleSessionTTLInSeconds: 300
+      RoleArn: !GetAtt CfnLexGenAIDemoRole.Arn
+      Name: LexGenAIBot
+      DataPrivacy:
+        ChildDirected: false
+      AutoBuildBotLocales: true
+      BotLocales:
+        - Intents:
+            - InitialResponseSetting:
+                CodeHook:
+                  EnableCodeHookInvocation: true
+                  IsActive: true
+                  PostCodeHookSpecification: {}
+              IntentClosingSetting:
+                ClosingResponse:
+                  MessageGroupsList:
+                    - Message:
+                        PlainTextMessage:
+                          Value: Hi there, I'm GenAI Bot. How can I help you?
+              Name: WelcomeIntent
+              SampleUtterances:
+                - Utterance: Hi
+                - Utterance: Hey there
+                - Utterance: Hello
+                - Utterance: I need some help
+                - Utterance: Help needed
+                - Utterance: Can I get some help?
+            - FulfillmentCodeHook:
+                Enabled: true
+                IsActive: true
+                PostFulfillmentStatusSpecification: {}
+              InitialResponseSetting:
+                CodeHook:
+                  EnableCodeHookInvocation: true
+                  IsActive: true
+                  PostCodeHookSpecification: {}
+              Name: GenerateTextIntent
+              SampleUtterances:
+                - Utterance: Generate content for
+                - Utterance: 'Create text '
+                - Utterance: 'Create a response for '
+                - Utterance: Text to be generated for
+            - FulfillmentCodeHook:
+                Enabled: true
+                IsActive: true
+                PostFulfillmentStatusSpecification: {}
+              InitialResponseSetting:
+                CodeHook:
+                  EnableCodeHookInvocation: true
+                  IsActive: true
+                  PostCodeHookSpecification: {}
+              Name: FallbackIntent
+              ParentIntentSignature: AMAZON.FallbackIntent
+          LocaleId: en_US
+          NluConfidenceThreshold: 0.4
+      Description: Bot created demonstration of GenAI capabilities.
+      TestBotAliasSettings:
+        BotAliasLocaleSettings:
+          - BotAliasLocaleSetting:
+              CodeHookSpecification:
+                LambdaCodeHook:
+                  CodeHookInterfaceVersion: '1.0'
+                  LambdaArn: !GetAtt LexGenAIBotLambda.Arn
+              Enabled: true
+            LocaleId: en_US
