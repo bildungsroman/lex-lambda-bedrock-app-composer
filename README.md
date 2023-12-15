@@ -4,10 +4,10 @@ A clone of [lex-lambda-bedrock-cdk-python](https://github.com/awsarippa/lex-lamb
 ![Application architecture](./assets/architecture.png)
 
 # Instructions 
-***(taken from awsarippa/lex-lambda-bedrock-cdk-python and modified to use AWS SAM)***
+***(taken from [awsarippa/lex-lambda-bedrock-cdk-python]((https://github.com/awsarippa/lex-lambda-bedrock-cdk-python)) and modified to use AWS SAM)***
 
 ### What resources will be created?
-This CDK code will create the following:
+This CloudFormation template will create the following:
    - 1 Lex bot
    - 1 Lambda (to invoke the Bedrock api and subsequently the Foundation Model provided by Anthropic to generate the text content)
    - 2 Iam roles (one for the lex bot to call Lambda, one for the Lambda to call Bedrock)
@@ -34,7 +34,7 @@ If you have not yet run `aws configure` and set a default region, you must do so
 You must use a role that has sufficient permissions to create Iam roles, as well as cloudformation resources
 
 #### Python >=3.8
-Make sure you have [python3](https://www.python.org/downloads/) installed at a version >=3.8.x in the CDK environment. The demonstration has used python version 3.8 and a layer has been attached.
+Make sure you have [python3](https://www.python.org/downloads/) installed at a version >=3.8.x in your environment. The demonstration has used python version 3.8 and a layer has been attached.
 The layer used in this demonstration has Boto3>=1.28.57 (for Bedrock service).
 
 #### AWS SAM CLI
@@ -47,7 +47,7 @@ Make sure you have the [AWS SAM CLI](https://docs.aws.amazon.com/serverless-appl
 
 ```
 gh repo clone bildungsroman/lex-lambda-bedrock-app-composer
-cd lex-lambda-bedrock-cdk-python
+cd lex-lambda-bedrock-app-composer
 ```
 
 Install the required dependencies into your Python environment 
@@ -68,8 +68,7 @@ Click the icon, and you'll see your template loaded. If you've set up your SAM C
 The deployment will create a Lex bot, a Lambda and a S3 bucket.
 
 ## Usage
-Once all the resources are created after `cdk deploy` finishes, go to AWS Management Console and search for Amazon Lex service. 
-If the deployment is successful, a Lex bot named `LexGenAIBot` should be seen in the Bots home page.
+Once all the resources are created after `sam deploy` finishes, go to the AWS Management Console and search for the Amazon Lex service. If the deployment is successful, a Lex bot named `LexGenAIBot` should be seen in the Bots home page.
 
 ![Diagram](https://github.com/awsarippa/lex-lambda-bedrock-cdk-python/blob/7e521e1bda33921695b82b117b75fddcba5f0708/diagrams/LexBotHomePage.png)
 
