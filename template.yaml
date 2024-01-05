@@ -29,12 +29,6 @@ Resources:
       RetentionPolicy: Delete
     Metadata:
       BuildMethod: python3.11
-  Permission:
-    Type: AWS::Lambda::Permission
-    Properties:
-      FunctionName: !Ref LexGenAIBotLambda
-      Action: lambda:InvokeFunction
-      Principal: lexv2.amazonaws.com
   LexGenAIBotLambdaServiceRole:
     Type: AWS::IAM::Role
     Properties:
@@ -160,3 +154,9 @@ Resources:
                   LambdaArn: !GetAtt LexGenAIBotLambda.Arn
               Enabled: true
             LocaleId: en_US
+  LexGenAIBotLambdaInvoke:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref LexGenAIBotLambda
+      Action: lambda:InvokeFunction
+      Principal: lexv2.amazonaws.com
